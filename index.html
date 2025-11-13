@@ -1,0 +1,504 @@
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>
+   Play Music Area - Nazril
+  </title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Varela+Round&amp;display=swap" rel="stylesheet"/>
+  <style>
+   body {
+      font-family: "Varela Round", sans-serif;
+    }
+    /* Scrollbar for playlist */
+    ::-webkit-scrollbar {
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #121212;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #1db954;
+      border-radius: 10px;
+    }
+    /* Marquee animation for music titles */
+    .marquee {
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+    }
+    .marquee p {
+      display: inline-block;
+      padding-left: 100%;
+      animation: marquee 10s linear infinite;
+    }
+    @keyframes marquee {
+      0% {
+        transform: translateX(0%);
+      }
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+    /* Spinner */
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-left-color: #1db954;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    /* Adjust loading text margin */
+    #playerLoading p {
+      margin-top: 0.5rem;
+    }
+  </style>
+ </head>
+ <body class="bg-[#121212] text-white min-h-screen flex flex-col">
+  <header class="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-[#181818]">
+   <h1 class="text-2xl font-bold tracking-wide text-[#1db954] select-none">
+    Play Music - Nazril
+   </h1>
+   <div class="flex items-center space-x-6 text-sm font-medium text-gray-400 select-none">
+   </div>
+  </header>
+  <main class="flex-grow px-6 py-8 max-w-6xl mx-auto w-full flex flex-col">
+   <div class="w-full max-w-xl mx-auto block">
+    <label class="sr-only" for="searchInput">
+     Search Your Music
+    </label>
+    <div class="relative text-gray-400 focus-within:text-[#1db954]">
+     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <i class="fas fa-search">
+      </i>
+     </div>
+     <input aria-label="Search Your Music" autocapitalize="off" autocomplete="off" autocorrect="off" class="block w-full bg-[#282828] rounded-full py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#1db954] transition shadow-sm text-base font-semibold" id="searchInput" placeholder="Search your music" spellcheck="false" type="search"/>
+    </div>
+   </div>
+   <h2 class="text-[#b3b3b3] font-semibold mb-4 select-none text-base uppercase tracking-wide mt-8">
+    recomend
+   </h2>
+   <section aria-label="Music Recommendations" aria-live="polite" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 max-w-6xl mx-auto overflow-y-auto" id="playlist" style="max-height: 65vh;">
+   </section>
+  </main>
+  <!-- Player Modal -->
+  <div aria-labelledby="playerTitle" aria-modal="true" class="fixed inset-0 bg-black bg-opacity-90 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden" id="playerModal" role="dialog">
+   <div class="bg-[#181818] rounded-xl max-w-md w-full p-6 flex flex-col items-center space-y-8 relative min-h-[520px]">
+    <button aria-label="Close player" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl z-50" id="closePlayer">
+     <i class="fas fa-times">
+     </i>
+    </button>
+    <div class="w-full flex flex-col items-center space-y-8" id="playerContent">
+     <div class="w-28 h-28 rounded-md overflow-hidden flex items-center justify-center bg-[#1db954]">
+      <img alt="Music cover" class="rounded-xl w-full object-cover" height="400" id="playerCover" src="https://storage.googleapis.com/a1aa/image/c6ba59c6-4c71-45d0-4a04-4cacae1ad5b7.jpg" width="400"/>
+     </div>
+     <section class="w-full">
+      <div class="flex items-center justify-between mb-2">
+       <h2 class="text-white text-2xl font-bold leading-none select-none capitalize" id="playerTitle">
+        Loading...
+       </h2>
+       <button aria-label="Download" class="text-white text-2xl hover:text-[#1db954] transition disabled:opacity-50" disabled="" id="downloadBtn">
+        <i class="fas fa-download">
+        </i>
+       </button>
+      </div>
+      <div class="flex items-center space-x-2 mb-4">
+       <div class="bg-[#1db954] rounded-sm p-[2px]">
+        <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+         <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round">
+         </path>
+        </svg>
+       </div>
+       <p class="text-gray-300 font-sans text-base select-text" id="playerArtist">
+        Loading artist...
+       </p>
+      </div>
+      <div>
+       <input aria-label="Song progress" class="w-full accent-[#1db954]" id="progressBar" max="100" min="0" type="range" value="0"/>
+       <div class="flex justify-between text-gray-400 text-xs font-sans mt-1 select-none">
+        <span id="currentTime">
+         0:00
+        </span>
+        <span id="durationTime">
+         0:00
+        </span>
+       </div>
+      </div>
+      <div class="flex justify-center items-center space-x-12 mt-8">
+       <button aria-label="Previous" class="text-white text-3xl hover:text-[#1db954] transition" disabled="" id="prevBtn">
+        <i class="fas fa-step-backward">
+        </i>
+       </button>
+       <button aria-label="Play" class="bg-[#1db954] text-black rounded-full w-16 h-16 flex items-center justify-center text-3xl shadow-lg hover:bg-[#17a44c] transition" disabled="" id="playPauseBtn">
+        <i class="fas fa-play">
+        </i>
+       </button>
+       <button aria-label="Next" class="text-white text-3xl hover:text-[#1db954] transition" disabled="" id="nextBtn">
+        <i class="fas fa-step-forward">
+        </i>
+       </button>
+      </div>
+     </section>
+    </div>
+    <div class="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-[#181818] bg-opacity-90 rounded-xl" id="playerLoading">
+     <div aria-label="Loading music" class="spinner" role="status">
+     </div>
+    </div>
+    <audio id="audioPlayer" preload="metadata">
+    </audio>
+   </div>
+  </div>
+  <!-- Mini Player -->
+  <div class="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-gray-800 flex items-center px-4 py-2 space-x-4 z-50 hidden" id="miniPlayer">
+   <img alt="Mini player cover art" class="w-14 h-14 rounded-md object-cover flex-shrink-0" height="56" id="miniCover" src="https://storage.googleapis.com/a1aa/image/4dbd2801-38e0-4600-b4a9-7f37e20ad2ed.jpg" width="56"/>
+   <div class="flex-1 min-w-0">
+    <p class="text-white font-semibold truncate select-none" id="miniTitle">
+     No song playing
+    </p>
+    <p class="text-gray-400 text-sm truncate select-none" id="miniArtist">
+     -
+    </p>
+    <input aria-label="Mini player progress" class="w-full accent-[#1db954] mt-1" id="miniProgressBar" max="100" min="0" type="range" value="0"/>
+   </div>
+   <button aria-label="Mini player play/pause" class="text-[#1db954] text-2xl focus:outline-none" id="miniPlayPauseBtn">
+    <i class="fas fa-play">
+    </i>
+   </button>
+   <button aria-label="Mini player close" class="text-gray-400 hover:text-white text-xl focus:outline-none" id="miniCloseBtn">
+    <i class="fas fa-times">
+    </i>
+   </button>
+  </div>
+  <script>
+   const playlistContainer = document.getElementById("playlist");
+  const searchInput = document.getElementById("searchInput");
+  const playerModal = document.getElementById("playerModal");
+  const closePlayerBtn = document.getElementById("closePlayer");
+  const playerCover = document.getElementById("playerCover");
+  const playerTitle = document.getElementById("playerTitle");
+  const playerArtist = document.getElementById("playerArtist");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const progressBar = document.getElementById("progressBar");
+  const currentTimeEl = document.getElementById("currentTime");
+  const durationTimeEl = document.getElementById("durationTime");
+  const playPauseBtn = document.getElementById("playPauseBtn");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const audioPlayer = document.getElementById("audioPlayer");
+  const playerLoading = document.getElementById("playerLoading");
+  const playerContent = document.getElementById("playerContent");
+
+  // Mini player elements
+  const miniPlayer = document.getElementById("miniPlayer");
+  const miniCover = document.getElementById("miniCover");
+  const miniTitle = document.getElementById("miniTitle");
+  const miniArtist = document.getElementById("miniArtist");
+  const miniPlayPauseBtn = document.getElementById("miniPlayPauseBtn");
+  const miniCloseBtn = document.getElementById("miniCloseBtn");
+  const miniProgressBar = document.getElementById("miniProgressBar");
+
+  let playlistData = [];
+  let currentIndex = -1;
+  let isPlaying = false;
+
+  // Format detik ke mm:ss
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60) || 0;
+    const secs = Math.floor(seconds % 60) || 0;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  }
+
+  // Render playlist
+  function renderPlaylist(items) {
+    playlistData = items;
+    playlistContainer.innerHTML = "";
+    if (!items || items.length === 0) {
+      playlistContainer.innerHTML =
+        '<p class="col-span-full text-center text-gray-500 text-lg mt-10 select-none">No music found.</p>';
+      return;
+    }
+
+    items.forEach(({ track_url, thumbnail, title, artist, album, duration, release_date }, index) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className =
+        "flex flex-col items-center bg-[#282828] rounded-lg p-3 shadow-md hover:shadow-[#1db954] transition cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-[#1db954]";
+      item.setAttribute("aria-label", `Play ${title} by ${artist}`);
+      item.innerHTML = `
+        <div class="w-28 h-28 mb-2 rounded-md overflow-hidden flex items-center justify-center bg-[#1db954]">
+          <img
+            src="${thumbnail}"
+            alt="Thumbnail of ${title} by ${artist}, album ${album}"
+            class="object-cover w-full h-full"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <div class="w-full marquee mb-1">
+          <p class="text-white font-medium text-sm whitespace-nowrap">${title}</p>
+        </div>
+        <p class="text-gray-400 text-xs">${artist}</p>
+        <p class="text-gray-500 text-xs">${album} • ${duration}</p>
+        <p class="text-gray-600 text-[11px]">Released: ${release_date}</p>
+      `;
+      item.addEventListener("click", () => {
+        openPlayer(index);
+      });
+      playlistContainer.appendChild(item);
+    });
+  }
+
+  // Ambil lagu dari API search
+  async function fetchSongs(query) {
+    try {
+      playlistContainer.innerHTML =
+        '<p class="col-span-full text-center text-gray-400 text-lg mt-10 select-none">Loading...</p>';
+      const res = await fetch(
+        `https://api.siputzx.my.id/api/s/spotify?query=${encodeURIComponent(query)}`
+      );
+      const data = await res.json();
+      if (data.status && data.data) {
+        renderPlaylist(data.data);
+      } else {
+        renderPlaylist([]);
+      }
+    } catch (err) {
+      console.error(err);
+      renderPlaylist([]);
+    }
+  }
+
+  // Open player modal + load lagu by index
+  async function openPlayer(index) {
+    if (!playlistData[index]) return;
+    currentIndex = index;
+    const trackUrl = playlistData[index].track_url;
+
+    // Show loading spinner, hide content
+    playerLoading.classList.remove("hidden");
+    playerContent.classList.add("opacity-0", "pointer-events-none");
+    playPauseBtn.disabled = true;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    downloadBtn.disabled = true;
+    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+    isPlaying = false;
+    audioPlayer.pause();
+    audioPlayer.src = "";
+    progressBar.value = 0;
+    currentTimeEl.textContent = "0:00";
+    durationTimeEl.textContent = "0:00";
+
+    playerModal.classList.remove("hidden");
+
+    try {
+      // Ambil data lagu dari API SIPUTZX
+      const apiUrl = `https://api.siputzx.my.id/api/d/spotifyv2?url=${encodeURIComponent(trackUrl)}`;
+      const res = await fetch(apiUrl);
+      const json = await res.json();
+
+      if (json.status && json.data) {
+        const track = json.data;
+        const title = track.songTitle || track.title || "Unknown Title";
+        const artist = track.artist || "Unknown Artist";
+        const cover = track.coverImage || "https://placehold.co/400x400/png?text=No+Cover";
+        const music = track.mp3DownloadLink;
+
+        if (!music) throw new Error("Music URL not found");
+
+        // Update UI
+        playerTitle.textContent = title;
+        playerArtist.textContent = artist;
+        playerCover.src = cover;
+
+        // Setup tombol download
+        downloadBtn.disabled = false;
+        downloadBtn.onclick = () => {
+          const a = document.createElement("a");
+          a.href = music;
+          a.download = `${title}.mp3`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        };
+
+        // Load audio (do not autoplay)
+        audioPlayer.src = music;
+        audioPlayer.load();
+
+        // Enable buttons after metadata loaded
+        audioPlayer.onloadedmetadata = () => {
+          durationTimeEl.textContent = formatTime(audioPlayer.duration);
+          progressBar.max = Math.floor(audioPlayer.duration);
+          playPauseBtn.disabled = false;
+          prevBtn.disabled = currentIndex <= 0;
+          nextBtn.disabled = currentIndex >= playlistData.length - 1;
+
+          // Hide loading spinner, show content
+          playerLoading.classList.add("hidden");
+          playerContent.classList.remove("opacity-0", "pointer-events-none");
+        };
+
+        audioPlayer.ontimeupdate = () => {
+          progressBar.value = Math.floor(audioPlayer.currentTime);
+          currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+          updateMiniProgress(audioPlayer.currentTime);
+        };
+
+        audioPlayer.onended = () => {
+          isPlaying = false;
+          playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+          miniPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        };
+
+        // Update mini player info and show it
+        updateMiniPlayer(title, artist, cover);
+        showMiniPlayer();
+
+      } else {
+        playerTitle.textContent = "Failed to load track data";
+        playerCover.src = "https://placehold.co/400x400/png?text=No+Cover";
+        playerLoading.classList.add("hidden");
+        playerContent.classList.remove("opacity-0", "pointer-events-none");
+      }
+    } catch (error) {
+      console.error(error);
+      playerTitle.textContent = "Error loading track";
+      playerCover.src = "https://placehold.co/400x400/png?text=No+Cover";
+      playerLoading.classList.add("hidden");
+      playerContent.classList.remove("opacity-0", "pointer-events-none");
+    }
+  }
+
+  // Play / Pause manual
+  function playAudio() {
+    audioPlayer.play().then(() => {
+      isPlaying = true;
+      playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+      miniPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    }).catch(err => console.error("Play blocked:", err));
+  }
+
+  function pauseAudio() {
+    audioPlayer.pause();
+    isPlaying = false;
+    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+    miniPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+  }
+
+  // Toggle play/pause
+  playPauseBtn.addEventListener("click", () => {
+    if (!audioPlayer.src) return;
+    if (isPlaying) {
+      pauseAudio();
+    } else {
+      playAudio();
+    }
+  });
+
+  // Seek progress
+  progressBar.addEventListener("input", () => {
+    if (!audioPlayer.src) return;
+    audioPlayer.currentTime = progressBar.value;
+    currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+    updateMiniProgress(audioPlayer.currentTime);
+  });
+
+  // Close player modal but keep playing music and show mini player
+  closePlayerBtn.addEventListener("click", () => {
+    playerModal.classList.add("hidden");
+    showMiniPlayer();
+  });
+
+  // Prev button functionality
+  prevBtn.addEventListener("click", () => {
+    if (currentIndex > 0) {
+      openPlayer(currentIndex - 1);
+    }
+  });
+
+  // Next button functionality
+  nextBtn.addEventListener("click", () => {
+    if (currentIndex < playlistData.length - 1) {
+      openPlayer(currentIndex + 1);
+    }
+  });
+
+  // Mini player controls
+  miniPlayPauseBtn.addEventListener("click", () => {
+    if (!audioPlayer.src) return;
+    if (isPlaying) {
+      pauseAudio();
+    } else {
+      playAudio();
+    }
+  });
+
+  miniCloseBtn.addEventListener("click", () => {
+    audioPlayer.pause();
+    audioPlayer.src = "";
+    isPlaying = false;
+    hideMiniPlayer();
+    // Also close modal if open
+    playerModal.classList.add("hidden");
+  });
+
+  miniProgressBar.addEventListener("input", () => {
+    if (!audioPlayer.src) return;
+    audioPlayer.currentTime = miniProgressBar.value;
+    currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+    progressBar.value = miniProgressBar.value;
+  });
+
+  // Update mini player info
+  function updateMiniPlayer(title, artist, cover) {
+    miniTitle.textContent = title;
+    miniArtist.textContent = artist;
+    miniCover.src = cover;
+  }
+
+  // Show mini player
+  function showMiniPlayer() {
+    miniPlayer.classList.remove("hidden");
+  }
+
+  // Hide mini player
+  function hideMiniPlayer() {
+    miniPlayer.classList.add("hidden");
+  }
+
+  // Update mini player progress bar
+  function updateMiniProgress(currentTime) {
+    miniProgressBar.value = Math.floor(currentTime);
+    miniProgressBar.max = Math.floor(audioPlayer.duration) || 100;
+  }
+
+  // Default search
+  fetchSongs("music viral 2025");
+
+  // Search debounce
+  let typingTimer;
+  searchInput.addEventListener("input", (e) => {
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+      const query = e.target.value.trim();
+      if (query.length > 0) {
+        fetchSongs(query);
+      } else {
+        fetchSongs("music viral 2025");
+      }
+    }, 500);
+  });
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9789160cb334a3e9',t:'MTc1Njc3NDk5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
